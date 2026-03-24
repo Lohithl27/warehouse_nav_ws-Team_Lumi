@@ -1,0 +1,152 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /RobotModel1
+        - /LaserScan1
+        - /Map1
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/RobotModel
+      Description Topic:
+        Value: /robot_description
+      Enabled: true
+      Name: RobotModel
+      Value: true
+
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF
+      Marker Scale: 0.3
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+
+    - Class: rviz_default_plugins/LaserScan
+      Color: 255; 140; 0
+      Enabled: true
+      Name: LaserScan
+      Point Step: 1
+      Size (m): 0.02
+      Style: Points
+      Topic:
+        Reliability Policy: Best Effort
+        Value: /scan
+
+    - Class: rviz_default_plugins/Map
+      Alpha: 0.7
+      Color Scheme: map
+      Enabled: true
+      Name: Map (SLAM)
+      Topic:
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /map
+
+    - Class: rviz_default_plugins/Map
+      Alpha: 0.4
+      Color Scheme: costmap
+      Enabled: true
+      Name: Global Costmap
+      Topic:
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /global_costmap/costmap
+
+    - Class: rviz_default_plugins/Map
+      Alpha: 0.45
+      Color Scheme: costmap
+      Enabled: true
+      Name: Local Costmap
+      Topic:
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /local_costmap/costmap
+
+    - Class: rviz_default_plugins/Path
+      Color: 0; 220; 0
+      Enabled: true
+      Name: Global Path
+      Line Style: Lines
+      Line Width: 0.03
+      Topic:
+        Value: /plan
+
+    - Class: rviz_default_plugins/Path
+      Color: 0; 180; 255
+      Enabled: true
+      Name: Local Path (MPPI)
+      Line Width: 0.02
+      Topic:
+        Value: /local_plan
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MPPI Trajectories
+      Topic:
+        Reliability Policy: Best Effort
+        Value: /trajectories
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Frontier Markers
+      Topic:
+        Value: /frontier_markers
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Waypoint Markers
+      Topic:
+        Value: /waypoint_markers
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Obstacle Markers
+      Topic:
+        Reliability Policy: Best Effort
+        Value: /obstacle_markers
+
+    - Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Name: Goal Pose
+      Topic:
+        Value: /goal_pose
+
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Name: Camera Feed
+      Topic:
+        Reliability Policy: Best Effort
+        Value: /camera/image_raw
+
+  Enabled: true
+  Global Options:
+    Background Color: 20; 20; 25
+    Fixed Frame: map
+    Frame Rate: 30
+
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Value: /goal_pose
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Scale: 35
+      Target Frame: base_footprint
+      Value: TopDownOrtho (rviz_default_plugins)
+      X: 0
+      Y: 0

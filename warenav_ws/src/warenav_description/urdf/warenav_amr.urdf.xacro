@@ -1,0 +1,374 @@
+<?xml version="1.0"?>
+<!--
+  WarehouseNav AMR — Robot Description (XACRO)
+  Style: RB1-inspired circular chassis (ref: kuralme/rb1_ros2_description)
+  Sensors: RPLiDAR A1 (360° LiDAR) + IMU + forward camera
+  Drive: Differential drive with 2 casters
+  MAHE Mobility Challenge 2026
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="warenav_amr">
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║              PARAMETERS                       ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <xacro:property name="PI" value="3.14159265358979"/>
+
+  <!-- Base (circular chassis like RB1) -->
+  <xacro:property name="base_radius"  value="0.22"/>
+  <xacro:property name="base_height"  value="0.10"/>
+  <xacro:property name="base_mass"    value="8.0"/>
+
+  <!-- Drive wheels -->
+  <xacro:property name="wheel_radius" value="0.065"/>
+  <xacro:property name="wheel_width"  value="0.04"/>
+  <xacro:property name="wheel_mass"   value="0.5"/>
+  <xacro:property name="wheel_y"      value="0.195"/>  <!-- half track width -->
+  <xacro:property name="wheel_z"      value="-0.02"/>
+
+  <!-- Caster -->
+  <xacro:property name="caster_r"     value="0.025"/>
+  <xacro:property name="caster_mass"  value="0.2"/>
+
+  <!-- Sensor heights above base top -->
+  <xacro:property name="lidar_z"      value="0.08"/>
+  <xacro:property name="cam_z"        value="0.06"/>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║              MATERIALS                        ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <material name="orange">  <color rgba="0.91 0.47 0.13 1.0"/> </material>
+  <material name="dark">    <color rgba="0.15 0.15 0.15 1.0"/> </material>
+  <material name="black">   <color rgba="0.05 0.05 0.05 1.0"/> </material>
+  <material name="blue">    <color rgba="0.20 0.40 0.80 1.0"/> </material>
+  <material name="white">   <color rgba="0.90 0.90 0.90 1.0"/> </material>
+  <material name="gray">    <color rgba="0.50 0.50 0.50 1.0"/> </material>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║              INERTIA MACROS                   ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <xacro:macro name="inertia_cylinder" params="m r h">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(3*r*r+h*h)/12}" ixy="0" ixz="0"
+               iyy="${m*(3*r*r+h*h)/12}" iyz="0"
+               izz="${m*r*r/2}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="inertia_sphere" params="m r">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${2*m*r*r/5}" ixy="0" ixz="0"
+               iyy="${2*m*r*r/5}" iyz="0"
+               izz="${2*m*r*r/5}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="inertia_box" params="m x y z">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
+               iyy="${m*(x*x+z*z)/12}" iyz="0"
+               izz="${m*(x*x+y*y)/12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║         BASE FOOTPRINT & BASE LINK            ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child  link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Circular base (RB1-style) -->
+  <link name="base_link">
+    <visual>
+      <geometry><cylinder radius="${base_radius}" length="${base_height}"/></geometry>
+      <material name="dark"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="${base_radius}" length="${base_height}"/></geometry>
+    </collision>
+    <xacro:inertia_cylinder m="${base_mass}" r="${base_radius}" h="${base_height}"/>
+  </link>
+
+  <!-- Orange top ring (visual accent, like RB1) -->
+  <link name="top_ring">
+    <visual>
+      <geometry><cylinder radius="${base_radius+0.005}" length="0.008"/></geometry>
+      <material name="orange"/>
+    </visual>
+    <xacro:inertia_cylinder m="0.1" r="${base_radius}" h="0.008"/>
+  </link>
+  <joint name="top_ring_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="top_ring"/>
+    <origin xyz="0 0 ${base_height/2 + 0.004}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Sensor tower (vertical column) -->
+  <link name="sensor_tower">
+    <visual>
+      <geometry><cylinder radius="0.04" length="0.12"/></geometry>
+      <material name="gray"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.04" length="0.12"/></geometry>
+    </collision>
+    <xacro:inertia_cylinder m="0.2" r="0.04" h="0.12"/>
+  </link>
+  <joint name="sensor_tower_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="sensor_tower"/>
+    <origin xyz="0 0 ${base_height/2 + 0.06}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║           DRIVE WHEELS (macro)                ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <xacro:macro name="drive_wheel" params="side y_sign">
+    <link name="${side}_wheel_link">
+      <visual>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+      <xacro:inertia_cylinder m="${wheel_mass}" r="${wheel_radius}" h="${wheel_width}"/>
+    </link>
+    <joint name="${side}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child  link="${side}_wheel_link"/>
+      <origin xyz="0 ${y_sign * wheel_y} ${wheel_z}" rpy="${PI/2} 0 0"/>
+      <axis   xyz="0 0 -1"/>
+      <dynamics damping="0.05" friction="0.1"/>
+      <limit effort="20.0" velocity="5.0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:drive_wheel side="left"  y_sign="1"/>
+  <xacro:drive_wheel side="right" y_sign="-1"/>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║                CASTERS                        ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <xacro:macro name="caster" params="name x y">
+    <link name="${name}_caster_link">
+      <visual>
+        <geometry><sphere radius="${caster_r}"/></geometry>
+        <material name="gray"/>
+      </visual>
+      <collision>
+        <geometry><sphere radius="${caster_r}"/></geometry>
+      </collision>
+      <xacro:inertia_sphere m="${caster_mass}" r="${caster_r}"/>
+    </link>
+    <joint name="${name}_caster_joint" type="fixed">
+      <parent link="base_link"/>
+      <child  link="${name}_caster_link"/>
+      <origin xyz="${x} ${y} ${wheel_z - wheel_radius + caster_r}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:caster name="front_left"  x=" 0.15" y=" 0.1"/>
+  <xacro:caster name="front_right" x=" 0.15" y="-0.1"/>
+  <xacro:caster name="rear_left"   x="-0.15" y=" 0.1"/>
+  <xacro:caster name="rear_right"  x="-0.15" y="-0.1"/>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║         LIDAR (RPLiDAR A1 — 360°)             ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <link name="laser_link">
+    <visual>
+      <geometry><cylinder radius="0.038" length="0.041"/></geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.038" length="0.041"/></geometry>
+    </collision>
+    <xacro:inertia_cylinder m="0.17" r="0.038" h="0.041"/>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="sensor_tower"/>
+    <child  link="laser_link"/>
+    <origin xyz="0 0 0.08" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║              IMU LINK                         ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <link name="imu_link">
+    <visual>
+      <geometry><box size="0.025 0.025 0.004"/></geometry>
+      <material name="blue"/>
+    </visual>
+    <xacro:inertia_box m="0.01" x="0.025" y="0.025" z="0.004"/>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="imu_link"/>
+    <origin xyz="0.05 0 ${base_height/2 - 0.01}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║         CAMERA (forward-facing)               ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.025 0.075 0.025"/></geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.025 0.075 0.025"/></geometry>
+    </collision>
+    <xacro:inertia_box m="0.05" x="0.025" y="0.075" z="0.025"/>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="sensor_tower"/>
+    <child  link="camera_link"/>
+    <origin xyz="0.04 0 -0.02" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Camera optical frame (ROS convention) -->
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child  link="camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+  </joint>
+
+  <!-- ╔═══════════════════════════════════════════════╗ -->
+  <!-- ║           GAZEBO PLUGINS                      ║ -->
+  <!-- ╚═══════════════════════════════════════════════╝ -->
+
+  <!-- Differential Drive -->
+  <gazebo>
+    <plugin name="diff_drive_controller" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <remapping>cmd_vel:=cmd_vel</remapping>
+        <remapping>odom:=odom</remapping>
+      </ros>
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>${2 * wheel_y}</wheel_separation>
+      <wheel_diameter>${2 * wheel_radius}</wheel_diameter>
+      <max_wheel_torque>25</max_wheel_torque>
+      <max_wheel_acceleration>2.0</max_wheel_acceleration>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <update_rate>30</update_rate>
+    </plugin>
+  </gazebo>
+
+  <!-- RPLiDAR A1 — 360° scan, 10 Hz, 12m range, Gaussian noise σ=0.02m -->
+  <gazebo reference="laser_link">
+    <material>Gazebo/Blue</material>
+    <sensor name="lidar_sensor" type="ray">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265</min_angle>
+            <max_angle>3.14159265</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.12</min>
+          <max>12.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.02</stddev>
+        </noise>
+      </ray>
+      <plugin name="lidar_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros><remapping>~/out:=scan</remapping></ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>laser_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- IMU — 100 Hz, noise matching MPU-9250 datasheet -->
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros><remapping>~/out:=imu/data</remapping></ros>
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+      </plugin>
+      <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>0.009</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>0.009</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>0.009</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0.0</mean><stddev>0.065</stddev></noise></x>
+          <y><noise type="gaussian"><mean>0.0</mean><stddev>0.065</stddev></noise></y>
+          <z><noise type="gaussian"><mean>0.0</mean><stddev>0.065</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!-- Camera — 640×480 30fps -->
+  <gazebo reference="camera_link">
+    <sensor name="camera_sensor" type="camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+        <clip><near>0.02</near><far>100</far></clip>
+        <noise><type>gaussian</type><mean>0.0</mean><stddev>0.007</stddev></noise>
+      </camera>
+      <plugin name="camera_plugin" filename="libgazebo_ros_camera.so">
+        <ros>
+          <remapping>image_raw:=camera/image_raw</remapping>
+          <remapping>camera_info:=camera/camera_info</remapping>
+        </ros>
+        <camera_name>camera</camera_name>
+        <frame_name>camera_optical_frame</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Base materials and friction -->
+  <gazebo reference="base_link">
+    <material>Gazebo/DarkGrey</material>
+    <mu1>0.8</mu1><mu2>0.8</mu2>
+  </gazebo>
+  <gazebo reference="left_wheel_link">
+    <material>Gazebo/Black</material>
+    <mu1>1.0</mu1><mu2>1.0</mu2>
+    <kp>500000</kp><kd>10</kd>
+  </gazebo>
+  <gazebo reference="right_wheel_link">
+    <material>Gazebo/Black</material>
+    <mu1>1.0</mu1><mu2>1.0</mu2>
+    <kp>500000</kp><kd>10</kd>
+  </gazebo>
+  <gazebo reference="front_left_caster_link">  <mu1>0.01</mu1><mu2>0.01</mu2></gazebo>
+  <gazebo reference="front_right_caster_link"> <mu1>0.01</mu1><mu2>0.01</mu2></gazebo>
+  <gazebo reference="rear_left_caster_link">   <mu1>0.01</mu1><mu2>0.01</mu2></gazebo>
+  <gazebo reference="rear_right_caster_link">  <mu1>0.01</mu1><mu2>0.01</mu2></gazebo>
+
+</robot>

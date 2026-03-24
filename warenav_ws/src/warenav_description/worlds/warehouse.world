@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<!--
+  WarehouseNav AMR — Gazebo Warehouse World
+  Inspired by: bhavikmk/warehousebot, mlherd/Dataset-of-Gazebo-Worlds-Models-and-Maps
+  Layout: 20m x 15m | 6 rows (A-F) | 1.5m aisles | Dynamic pedestrian
+  MAHE Mobility Challenge 2026
+-->
+<sdf version="1.6">
+  <world name="warehouse">
+
+    <!-- Physics -->
+    <physics name="default_physics" default="true" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- Scene -->
+    <scene>
+      <ambient>0.5 0.5 0.5 1</ambient>
+      <background>0.1 0.1 0.12 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- Overhead sun -->
+    <light name="directional_light" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 20 0.1 0.1 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.2 -0.9</direction>
+    </light>
+
+    <!-- Ceiling lights -->
+    <light name="ceiling_1" type="point">
+      <pose>-7  0 5 0 0 0</pose>
+      <diffuse>0.95 0.95 0.90 1</diffuse>
+      <attenuation><range>20</range><constant>0.3</constant><linear>0.02</linear></attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    <light name="ceiling_2" type="point">
+      <pose>0  0 5 0 0 0</pose>
+      <diffuse>0.95 0.95 0.90 1</diffuse>
+      <attenuation><range>20</range><constant>0.3</constant><linear>0.02</linear></attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+    <light name="ceiling_3" type="point">
+      <pose>7  0 5 0 0 0</pose>
+      <diffuse>0.95 0.95 0.90 1</diffuse>
+      <attenuation><range>20</range><constant>0.3</constant><linear>0.02</linear></attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- ══════════════ FLOOR ═══════════════════════════ -->
+    <model name="floor">
+      <static>true</static>
+      <pose>0 0 -0.05 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry><box><size>22 17 0.1</size></box></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><box><size>22 17 0.1</size></box></geometry>
+          <material>
+            <ambient>0.35 0.35 0.38 1</ambient>
+            <diffuse>0.45 0.45 0.48 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ══════════════ OUTER WALLS ════════════════════ -->
+    <!-- North wall -->
+    <model name="wall_N"><static>true</static><pose>0 8.6 2 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>22 0.2 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>22 0.2 4</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient></material></visual></link></model>
+    <!-- South wall -->
+    <model name="wall_S"><static>true</static><pose>0 -8.6 2 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>22 0.2 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>22 0.2 4</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient></material></visual></link></model>
+    <!-- East wall -->
+    <model name="wall_E"><static>true</static><pose>11 0 2 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.2 17.2 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.2 17.2 4</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient></material></visual></link></model>
+    <!-- West wall -->
+    <model name="wall_W"><static>true</static><pose>-11 0 2 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.2 17.2 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.2 17.2 4</size></box></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient></material></visual></link></model>
+
+    <!-- ══════════════ SHELF MACRO ════════════════════
+         Each shelf unit: 0.4m deep × 3.0m long × 2.0m tall
+         Rows A-F, 3 units per row
+         Row spacing: 2.4m (0.4m shelf + 1.5m aisle + 0.5m back-to-back clearance)
+    ════════════════════════════════════════════════ -->
+
+    <!-- SHELF MATERIAL (all rows share same brown color) -->
+    <!-- Row A  x = -8.0 -->
+    <model name="shelf_A1"><static>true</static><pose>-8.0 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient><diffuse>0.65 0.48 0.28 1</diffuse></material></visual></link></model>
+    <model name="shelf_A2"><static>true</static><pose>-8.0  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient><diffuse>0.65 0.48 0.28 1</diffuse></material></visual></link></model>
+    <model name="shelf_A3"><static>true</static><pose>-8.0  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient><diffuse>0.65 0.48 0.28 1</diffuse></material></visual></link></model>
+
+    <!-- Row B  x = -5.6 -->
+    <model name="shelf_B1"><static>true</static><pose>-5.6 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_B2"><static>true</static><pose>-5.6  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_B3"><static>true</static><pose>-5.6  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+
+    <!-- Row C  x = -3.2 -->
+    <model name="shelf_C1"><static>true</static><pose>-3.2 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+    <model name="shelf_C2"><static>true</static><pose>-3.2  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+    <model name="shelf_C3"><static>true</static><pose>-3.2  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+
+    <!-- Row D  x = 0.8 -->
+    <model name="shelf_D1"><static>true</static><pose> 0.8 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_D2"><static>true</static><pose> 0.8  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_D3"><static>true</static><pose> 0.8  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+
+    <!-- Row E  x = 4.8 -->
+    <model name="shelf_E1"><static>true</static><pose> 4.8 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+    <model name="shelf_E2"><static>true</static><pose> 4.8  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+    <model name="shelf_E3"><static>true</static><pose> 4.8  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.55 0.38 0.20 1</ambient></material></visual></link></model>
+
+    <!-- Row F  x = 7.2 -->
+    <model name="shelf_F1"><static>true</static><pose> 7.2 -4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_F2"><static>true</static><pose> 7.2  0.0 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+    <model name="shelf_F3"><static>true</static><pose> 7.2  4.5 1.0 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.4 3.0 2.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.4 3.0 2.0</size></box></geometry>
+        <material><ambient>0.52 0.35 0.18 1</ambient></material></visual></link></model>
+
+    <!-- ══════════════ WORKSTATIONS ═══════════════════ -->
+    <!-- Charging dock (robot spawn point) — orange platform -->
+    <model name="charging_dock"><static>true</static><pose>-9.5 -7.2 0.04 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.8 0.8 0.08</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.8 0.8 0.08</size></box></geometry>
+        <material><ambient>0.9 0.5 0.0 1</ambient><diffuse>1.0 0.65 0.0 1</diffuse></material></visual></link></model>
+
+    <!-- Packing station — green table -->
+    <model name="packing_station"><static>true</static><pose>-9.0 6.5 0.5 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>2.0 1.0 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>2.0 1.0 1.0</size></box></geometry>
+        <material><ambient>0.15 0.45 0.15 1</ambient><diffuse>0.25 0.60 0.25 1</diffuse></material></visual></link></model>
+
+    <!-- Pallets (static obstacles) -->
+    <model name="pallet_1"><static>true</static><pose>-7.0 7.0 0.07 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.8 0.14</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>1.2 0.8 0.14</size></box></geometry>
+        <material><ambient>0.50 0.33 0.12 1</ambient></material></visual></link></model>
+    <model name="pallet_2"><static>true</static><pose>2.5 7.5 0.07 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>1.2 0.8 0.14</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>1.2 0.8 0.14</size></box></geometry>
+        <material><ambient>0.50 0.33 0.12 1</ambient></material></visual></link></model>
+    <model name="pallet_3"><static>true</static><pose>-1.2 -7.0 0.07 0 0 0</pose>
+      <link name="l"><collision name="c"><geometry><box><size>0.8 1.2 0.14</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.8 1.2 0.14</size></box></geometry>
+        <material><ambient>0.50 0.33 0.12 1</ambient></material></visual></link></model>
+
+    <!-- ══════════════ DYNAMIC OBSTACLE (PEDESTRIAN) ═ -->
+    <actor name="worker_1">
+      <pose>-2.0 -6.5 0 0 0 1.5707</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walking">
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>3.0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="walking">
+          <waypoint><time>0</time><pose>-2.0 -7.0 0 0 0 1.5707</pose></waypoint>
+          <waypoint><time>7</time><pose>-2.0  7.0 0 0 0 1.5707</pose></waypoint>
+          <waypoint><time>14</time><pose>-2.0 -7.0 0 0 0 -1.5707</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+  </world>
+</sdf>
