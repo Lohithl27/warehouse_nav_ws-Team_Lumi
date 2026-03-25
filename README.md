@@ -6,7 +6,7 @@ Autonomous Self-Driving Indoor Navigation for Warehouse Inventory Management
 
 ---
 
-## 📁 Workspace Structure
+## Workspace Structure
 
 ```
 warenav_ws/
@@ -47,7 +47,7 @@ warenav_ws/
 
 ---
 
-## 🔧 Step 1 — Install Prerequisites (Ubuntu 22.04)
+##  Step 1 — Install Prerequisites (Ubuntu 22.04)
 
 ```bash
 # ROS2 Humble (if not installed)
@@ -81,7 +81,7 @@ rosdep update
 
 ---
 
-## 🔨 Step 2 — Build the Workspace
+##  Step 2 — Build the Workspace
 
 ```bash
 # Place the warenav_ws folder in your home directory
@@ -110,7 +110,7 @@ ros2 pkg list | grep warenav
 
 ---
 
-## 🚀 Step 3 — Run the Simulation
+##  Step 3 — Run the Simulation
 
 ### Option A — Full autonomous simulation (recommended)
 
@@ -146,7 +146,7 @@ ros2 launch warenav_bringup simulation.launch.py \
 
 ---
 
-## 🎮 Step 4 — Control the Mission
+##  Step 4 — Control the Mission
 
 Open a **new terminal** and source:
 
@@ -265,7 +265,7 @@ ros2 service call /start_mission std_srvs/srv/Trigger
 
 ---
 
-## 🔍 What Each RViz2 Display Shows
+##  What Each RViz2 Display Shows
 
 | Display | Color | Meaning |
 |---|---|---|
@@ -284,7 +284,7 @@ ros2 service call /start_mission std_srvs/srv/Trigger
 
 ---
 
-## 🔑 Key Commands Quick Reference
+##  Key Commands Quick Reference
 
 ```bash
 # ── BUILD ─────────────────────────────────────────────
@@ -324,7 +324,7 @@ pkill -f ros2 && pkill -f gzserver && pkill -f gzclient
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -340,7 +340,7 @@ pkill -f ros2 && pkill -f gzserver && pkill -f gzclient
 
 ---
 
-## 🔌 Hardware Migration Guide
+##  Hardware Migration Guide
 
 When you have the physical Jetson + RPLiDAR + MPU-9250:
 
@@ -362,7 +362,7 @@ ros2 run usb_cam usb_cam_node_exe \
 
 ---
 
-## 📚 Reference Repositories Used
+##  Reference Repositories Used
 
 | Repository | What was taken |
 |---|---|
