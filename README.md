@@ -204,7 +204,7 @@ ros2 service call /mission_report std_srvs/srv/Trigger
 
 ---
 
-## 📊 Step 5 — Monitor Everything
+##  Step 5 — Monitor Everything
 
 ```bash
 # Mission status (updates every 3s)
@@ -231,7 +231,7 @@ ros2 topic hz /odometry/filtered
 
 ---
 
-## 🗺️ Step 6 — Two-Phase Workflow (Map then Navigate)
+##  Step 6 — Two-Phase Workflow (Map then Navigate)
 
 ### Phase 1 — Build the map manually
 
