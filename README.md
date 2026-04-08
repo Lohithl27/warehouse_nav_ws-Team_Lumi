@@ -1,376 +1,242 @@
-# warehouse_nav_ws (Team_Lumi)
-Autonomous Self-Driving Indoor Navigation for Warehouse Inventory Management
-# WarehouseNav AMR — Complete Working Prototype
-## MAHE Mobility Challenge 2026 | Robotics Track | ARTPARK, IISc
-### Built from: bhavikmk/warehousebot + kuralme/rb1_ros2_description + AAISHAA1585/Autonomous_Indoor_Robot-ROS2
+# LUMI — Autonomous Warehouse Navigation AMR
+
+**MAHE Mobility Challenge 2026 | Round 1.5 | by Rino | GMIT Mandya**
+
+![LUMI Demo](lumi_demo.gif)
+
+> Map-less autonomous navigation · ArUco detection · ROS 2 Humble · Gazebo Fortress
 
 ---
 
-## Workspace Structure
+## What LUMI Does
+
+LUMI is a fully autonomous mobile robot that:
+1. Starts at the warehouse loading dock
+2. Explores shelf rows using LiDAR reactive navigation
+3. Detects all 4 ArUco inventory markers (IDs 0–3) using camera + OpenCV
+4. Navigates through an S-curve maze section
+5. Avoids the false goal trap
+6. Reaches the true dispatch zone
+
+**No SLAM. No pre-built map. No hardcoded positions.**
+
+---
+
+## Simulation Screenshots
+
+| Arena Overview | Main Aisle |
+|:---:|:---:|
+| ![Arena](docs/gazebo_overhead.png) | ![Aisle](docs/gazebo_aisle_view.png) |
+
+| Goal Zone | Live Run |
+|:---:|:---:|
+| ![Goal](docs/gazebo_goal_zone.png) | ![Running](docs/running_world.png) |
+
+| Camera View (ArUco detected) | Generated ArUco Markers |
+|:---:|:---:|
+| ![Camera](docs/camera_aruco.png) | ![Markers](docs/aruco_markers.png) |
+
+---
+
+## Arena Layout
 
 ```
-warenav_ws/
-└── src/
-    ├── warenav_description/          ← Package 1: Robot URDF + Gazebo World
-    │   ├── package.xml
-    │   ├── CMakeLists.txt
-    │   ├── urdf/
-    │   │   └── warenav_amr.urdf.xacro   RB1-style circular robot
-    │   ├── worlds/
-    │   │   └── warehouse.world          20×15m, 18 shelves, pedestrian
-    │   ├── launch/
-    │   │   └── display.launch.py        URDF visualiser only
-    │   └── rviz/
-    │       └── warenav.rviz             Pre-configured dashboard
-    │
-    ├── warenav_nav/                  ← Package 2: Navigation Nodes + Configs
-    │   ├── package.xml
-    │   ├── CMakeLists.txt
-    │   ├── warenav_nav/
-    │   │   ├── frontier_explorer.py     Autonomous open-world exploration
-    │   │   ├── mission_controller.py    Warehouse patrol state machine
-    │   │   ├── obstacle_detector.py     LiDAR proximity detection
-    │   │   └── inventory_logger.py      JSON log per shelf
-    │   └── config/
-    │       ├── ekf.yaml                 IMU + odometry fusion
-    │       ├── slam_toolbox.yaml        Lifelong async SLAM
-    │       └── nav2_params.yaml         MPPI + SmacPlanner + costmaps
-    │
-    └── warenav_bringup/              ← Package 3: All Launch Files
-        ├── package.xml
-        ├── CMakeLists.txt
-        └── launch/
-            ├── simulation.launch.py     ★ MAIN — one command = everything
-            ├── slam_mapping.launch.py   Manual mapping with teleop
-            └── nav2_localization.launch.py  Navigate on saved map
+y=28-30  ╔═════════════════════╗  ← TRUE GOAL (green floor)
+         ║   DISPATCH ZONE     ║
+y=24-28  ╠════════╦════════════╣
+         ║ Shelf  ║ FAKE GOAL  ║  ← ArUco 3 on shelf D1
+         ║  D1    ║ (orange)   ║
+y=15-24  ╠════════╩════════════╣  ← MAZE (S-curve, 5m corridors)
+         ║  Wall1 ── Wall2     ║  ← ArUco 2 on maze wall
+         ║  ← → corridors     ║
+y=13-15  ╠═══════╦═════════════╣  ← INTERSECTION
+         ║ TRAP  ║  CORRECT →  ║  LEFT=dead-end, CENTER=correct
+y=2-14   ╠═══════╩═════════════╣  ← MAIN AISLE
+         ║ A1/A2 ║ B1/B2      ║  ArUco 0 on A2, ArUco 1 on B1
+y=0-2    ╠═════════════════════╣  ← START ZONE (green floor)
+         ║   LOADING DOCK  🤖  ║  Robot spawns at (0, 0.5)
+         ╚═════════════════════╝
+              x=-5      x=5
 ```
 
 ---
 
-##  Step 1 — Install Prerequisites (Ubuntu 22.04)
+## ArUco Markers
 
+| ID | Shelf | Position (x, y, z) | Faces | Detection dist |
+|:--:|:-----:|:-------------------:|:-----:|:--------------:|
+| 0 | A2 left face | (−2.95, 9.5, 0.55) | +X | 1.55m |
+| 1 | B1 right face | (+2.95, 4.5, 0.55) | −X | 1.55m |
+| 2 | Maze wall | (−1.0, 17.7, 0.55) | −Y (south) | 2.7m |
+| 3 | D1 left face | (−2.95, 26.5, 0.55) | +X | 1.55m |
+
+---
+
+## Robot State Machine
+
+```
+INIT ──5s──► EXPLORE ──zone entry──► DRIFT_TO_SHELF
+                ▲                          │
+                │                    ArUco seen
+                │                          ▼
+              LOG ◄──close enough── APPROACH_ARUCO
+                │
+           all 4 found
+                │
+                ▼
+         HEADING_TO_GOAL ──y>28.5──► GOAL_REACHED ──► DONE
+
+   STUCK >8s triggers:
+   RECOVERY_ROTATE (360°) or RECOVERY_BACK (reverse+turn)
+```
+
+---
+
+## Setup
+
+### Prerequisites
 ```bash
-# ROS2 Humble (if not installed)
-sudo apt update && sudo apt install -y \
-  ros-humble-desktop \
-  ros-humble-nav2-bringup \
-  ros-humble-nav2-msgs \
-  ros-humble-slam-toolbox \
-  ros-humble-robot-localization \
-  ros-humble-gazebo-ros-pkgs \
-  ros-humble-gazebo-plugins \
-  ros-humble-xacro \
-  ros-humble-joint-state-publisher \
-  ros-humble-joint-state-publisher-gui \
-  ros-humble-teleop-twist-keyboard \
-  python3-colcon-common-extensions \
-  python3-rosdep \
-  python3-pip
-
-# Python dependencies
-pip3 install numpy scipy
-
-# Source ROS2
-source /opt/ros/humble/setup.bash
-echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-
-# Init rosdep
-sudo rosdep init 2>/dev/null || true
-rosdep update
+sudo apt install -y \
+  ros-humble-ros-gz-sim ros-humble-ros-gz-bridge \
+  ros-humble-nav2-bringup ros-humble-robot-localization \
+  ros-humble-twist-stamper ros-humble-cv-bridge \
+  ros-humble-teleop-twist-keyboard python3-opencv
 ```
 
----
-
-##  Step 2 — Build the Workspace
-
+### Build
 ```bash
-# Place the warenav_ws folder in your home directory
-cd ~/warenav_ws
-
-# Install all ROS2 deps
+mkdir -p ~/ros2_ws/src
+cp -r mini_r1_v1_description mini_r1_v1_gz warenav_r15 ~/ros2_ws/src/
+cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
-
-# Build (symlink-install = Python changes take effect immediately)
 colcon build --symlink-install
-
-# Source workspace
 source install/setup.bash
-echo "source ~/warenav_ws/install/setup.bash" >> ~/.bashrc
 ```
 
-### Verify the build
-
+### Run
 ```bash
-ros2 pkg list | grep warenav
-# Expected output:
-# warenav_bringup
-# warenav_description
-# warenav_nav
+# Autonomous mode
+ros2 launch warenav_r15 r15_challenge.launch.py
+
+# With keyboard override
+ros2 launch warenav_r15 r15_challenge.launch.py use_teleop:=true
 ```
 
----
-
-##  Step 3 — Run the Simulation
-
-### Option A — Full autonomous simulation (recommended)
-
+### Monitor
 ```bash
-ros2 launch warenav_bringup simulation.launch.py
-```
-
-**Startup sequence (watch the terminal):**
-- `t=0s` — Gazebo opens, robot spawns at charging dock
-- `t=5s` — EKF sensor fusion + SLAM toolbox start
-- `t=10s` — Nav2 (MPPI planner + costmaps) starts
-- `t=18s` — Frontier explorer + Mission controller + Obstacle detector start
-- `t=20s` — RViz2 opens with full dashboard
-
-**Wait for this message in terminal:**
-```
-[slam_toolbox]: Message Filter dropping message: frame 'laser_link'...
-```
-That means SLAM is receiving scans. Wait ~5 more seconds then start the mission.
-
-### Option B — Auto-start (robot begins exploring automatically)
-
-```bash
-ros2 launch warenav_bringup simulation.launch.py auto_start:=true
-```
-
-### Option C — Skip exploration (go straight to shelf patrol)
-
-```bash
-ros2 launch warenav_bringup simulation.launch.py \
-  auto_start:=true skip_exploration:=true
-```
-
----
-
-##  Step 4 — Control the Mission
-
-Open a **new terminal** and source:
-
-```bash
-source ~/warenav_ws/install/setup.bash
-```
-
-### Start the full warehouse patrol
-
-```bash
-ros2 service call /start_mission std_srvs/srv/Trigger
-```
-
-The robot will:
-1. **Phase 1 — Explore:** Autonomously map the entire warehouse using frontier exploration
-2. **Phase 2 — Patrol:** Visit all 18 shelf locations (Rows A–F)
-3. **Phase 3 — Return:** Drive back to charging dock
-4. **Done:** Mission log saved to `/tmp/mission_*.json`
-
-### Navigate to a specific shelf directly
-
-```bash
-# Row B, Shelf 2
-ros2 topic pub --once /nav_cmd std_msgs/msg/String \
-  '{"data": "{\"shelf\": \"B2\"}"}'
-
-# Far corner (Row F, Shelf 3) — hardest navigation challenge
-ros2 topic pub --once /nav_cmd std_msgs/msg/String \
-  '{"data": "{\"shelf\": \"F3\"}"}'
-
-# Return to dock
-ros2 topic pub --once /nav_cmd std_msgs/msg/String \
-  '{"data": "{\"shelf\": \"DOCK\"}"}'
-
-# Go to packing station
-ros2 topic pub --once /nav_cmd std_msgs/msg/String \
-  '{"data": "{\"shelf\": \"PACKING\"}"}'
-```
-
-### Control services
-
-```bash
-# Stop mission immediately
-ros2 service call /stop_mission std_srvs/srv/Trigger
-
-# Pause mid-mission
-ros2 service call /pause_mission std_srvs/srv/Trigger
-
-# Resume after pause
-ros2 service call /resume_mission std_srvs/srv/Trigger
-
-# Get full mission report
-ros2 service call /mission_report std_srvs/srv/Trigger
-```
-
----
-
-##  Step 5 — Monitor Everything
-
-```bash
-# Mission status (updates every 3s)
+# Terminal 1 — mission progress
 ros2 topic echo /mission_status
 
-# Exploration status
-ros2 topic echo /explore_status
+# Terminal 2 — live camera with ArUco overlay
+ros2 run rqt_image_view rqt_image_view /aruco/debug_image
 
-# Obstacle detection
-ros2 topic echo /obstacle_detected
-
-# Inventory being logged at each shelf
-ros2 topic echo /inventory_log
-
-# LiDAR scan rate (should be ~10 Hz)
-ros2 topic hz /scan
-
-# EKF output rate (should be ~30 Hz)
-ros2 topic hz /odometry/filtered
-
-# Map coverage (watch it grow in RViz2)
-# Grey = unknown, White = mapped free space, Black = obstacles
+# Terminal 3 — sign detector view
+ros2 run rqt_image_view rqt_image_view /sign/debug_image
 ```
 
 ---
 
-##  Step 6 — Two-Phase Workflow (Map then Navigate)
+## Launch Sequence
 
-### Phase 1 — Build the map manually
-
-```bash
-# Terminal 1: Launch SLAM + Gazebo + Teleop
-ros2 launch warenav_bringup slam_mapping.launch.py
-
-# Terminal 2: Drive the robot around the warehouse
-# An xterm window opens with teleop — use arrow keys:
-# i = forward  ,  = backward  j = left  l = right  k = stop
-```
-
-**In RViz2:** watch the grey map fill in as you drive.
-
-```bash
-# Terminal 3: Save the map when >90% coverage
-ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap \
-  "{name: {data: '/tmp/warenav_map'}}"
-# Creates: /tmp/warenav_map.yaml + /tmp/warenav_map.pgm
-```
-
-### Phase 2 — Navigate on saved map
-
-```bash
-ros2 launch warenav_bringup nav2_localization.launch.py \
-  map:=/tmp/warenav_map.yaml
-
-# Start patrol (skip exploration — map already exists)
-ros2 service call /start_mission std_srvs/srv/Trigger
-```
+| Time | Event |
+|:----:|:------|
+| t = 0s | Gazebo loads world + robot state publisher |
+| t = 5s | MINI R1 spawns at (0, 0.5) facing north + bridge starts |
+| t = 9s | EKF starts: odom + IMU → /odometry/filtered |
+| t = 14s | Nav2: local costmap + MPPI planner |
+| t = 19s | ArUco detector + Sign detector start |
+| t = 22s | Mission controller launched |
+| **t = 27s** | **Robot begins autonomous exploration** |
 
 ---
 
-##  What Each RViz2 Display Shows
+## Key Technical Details
 
-| Display | Color | Meaning |
-|---|---|---|
-| Map (SLAM) | Grey/White/Black | Grey=unknown, White=free, Black=obstacle |
-| Global Path | Bright green | Nav2 SmacPlanner route to next waypoint |
-| Local Path (MPPI) | Cyan | MPPI best trajectory (updates 20Hz) |
-| MPPI Trajectories | Orange lines | All 1000 sampled candidate paths |
-| Frontier Markers | Cyan spheres | Unexplored boundaries (exploration phase) |
-| Frontier Markers | Orange sphere | Currently targeted frontier |
-| Waypoint Markers | Blue = pending | Shelf locations yet to visit |
-| Waypoint Markers | Green = done | Successfully visited shelves |
-| Waypoint Markers | Red = failed | Shelves that could not be reached |
-| Waypoint Markers | Orange = current | Shelf being navigated to right now |
-| Obstacle Markers | Red/Orange sphere | Detected obstacle from LiDAR |
-| Camera Feed | Bottom panel | Live robot camera view |
+### Camera Intrinsics
+```
+hFOV = 1.089 rad (62.4°)     Resolution = 640 × 480
+fx = fy = 320 / tan(0.5445) = 534.6 px    ← critical, not default 554
+Camera height = 0.07 + 0.078 = 0.148m above ground
+ArUco visible from: 0.89m to 3.8m
+```
+
+### 8-Sector LiDAR
+```
+Sectors: F, FL, FR, L, R, BL, BR, B
+eff_front = min(F, FL×0.70, FR×0.70)
+Speed tiers:
+  eff < 0.40m → stop + spin
+  eff < 0.70m → v=0.07 m/s + steer
+  eff < 1.10m → v=0.16 m/s + correct
+  eff ≥ 1.10m → v=0.28 m/s + wall-follow
+```
+
+### Critical Fixes
+| Bug | Cause | Fix |
+|:---|:---|:---|
+| No camera images | QoS mismatch | BEST_EFFORT on all sensor subs |
+| Robot frozen | use_sim_time on mission_controller | Remove use_sim_time from mission |
+| Wrong bearing | fx=554 (incorrect) | fx=534.6 from hFOV=1.089 |
+| ArUco 2 invisible | yaw=0 faces east | yaw=π faces south (toward robot) |
+| Robot not spawning | Spawn before Gazebo ready | Delay spawn to t=5s |
+| Build fails | obstacle_detector.py in CMakeLists | Remove non-existent file |
 
 ---
 
-##  Key Commands Quick Reference
+## Scoring (MAHE Guidelines)
 
-```bash
-# ── BUILD ─────────────────────────────────────────────
-colcon build --symlink-install && source install/setup.bash
+| Criterion | Max | Status |
+|:---|:---:|:---:|
+| ArUco detection (4/4) | 30 | ✅ |
+| Correct navigation decisions | 20 | ✅ |
+| Maze completion | 15 | ✅ |
+| Loop avoidance | 10 | ✅ |
+| Time efficiency | 15 | ✅ |
+| Motion smoothness | 10 | ✅ |
+| **Total** | **100** | |
 
-# ── FULL LAUNCH ───────────────────────────────────────
-ros2 launch warenav_bringup simulation.launch.py
+---
 
-# ── MISSION CONTROL ───────────────────────────────────
-ros2 service call /start_mission  std_srvs/srv/Trigger
-ros2 service call /stop_mission   std_srvs/srv/Trigger
-ros2 service call /pause_mission  std_srvs/srv/Trigger
-ros2 service call /resume_mission std_srvs/srv/Trigger
-ros2 service call /mission_report std_srvs/srv/Trigger
+## Package Structure
 
-# ── GO TO SHELF ───────────────────────────────────────
-ros2 topic pub --once /nav_cmd std_msgs/msg/String '{"data": "{\"shelf\": \"D2\"}"}'
-
-# ── SAVE MAP ──────────────────────────────────────────
-ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap \
-  "{name: {data: '/tmp/warenav_map'}}"
-
-# ── MANUAL DRIVE ──────────────────────────────────────
-ros2 run teleop_twist_keyboard teleop_twist_keyboard \
-  --ros-args --remap cmd_vel:=/cmd_vel
-
-# ── MONITOR ───────────────────────────────────────────
-ros2 topic echo /mission_status
-ros2 topic hz /scan
-ros2 topic hz /odometry/filtered
-ros2 node list
-ros2 run tf2_tools view_frames
-
-# ── EMERGENCY RESET ───────────────────────────────────
-pkill -f ros2 && pkill -f gzserver && pkill -f gzclient
+```
+warenav_r15/
+├── warenav_r15/
+│   ├── mission_controller.py   # State machine explorer
+│   ├── aruco_detector.py       # OpenCV ArUco + HUD overlay
+│   └── sign_detector.py        # HSV floor sign detector
+├── worlds/world_template.sdf   # Custom warehouse arena
+├── config/
+│   ├── ekf_r15.yaml            # EKF: odom + IMU
+│   └── nav2_mapless.yaml       # Nav2: local costmap + MPPI
+├── launch/r15_challenge.launch.py
+├── rviz/r15.rviz
+└── images/
+    ├── aruco/aruco_0-3.png     # Generated ArUco textures
+    └── signs/                  # Floor sign PNG textures
 ```
 
 ---
 
-##  Troubleshooting
+## Round 1 Summary
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| Map stays grey | SLAM not receiving /scan | `ros2 topic hz /scan` — should be 10Hz |
-| Robot not moving | Nav2 not active | `ros2 node list \| grep nav2` — wait 15s |
-| EKF not publishing | Missing /odom or /imu | `ros2 topic hz /odom /imu/data` |
-| "Goal rejected" | Nav2 costmap not ready | Wait 20s after launch, check Nav2 nodes |
-| Robot spinning | MPPI tuning | Reduce `vx_max: 0.3` in nav2_params.yaml |
-| Gazebo crash | Memory/GPU | Add `gz_verbose:=false`, remove pedestrian actor |
-| colcon build fails | Missing deps | `rosdep install --from-paths src --ignore-src -r -y` |
-| RViz "Fixed frame error" | Frame not published yet | Wait for SLAM to start, set Fixed Frame to `map` |
-| Frontier not found | Map too small | Drive manually to open more space first |
+**Problem:** Warehouse inventory audits take 8–12 hours manually.
+
+**Solution:** Fully autonomous AMR using:
+- LiDAR reactive navigation (no SLAM)
+- Camera ArUco detection (shelf inventory markers)
+- Floor sign interpretation (directional guidance)
+- EKF sensor fusion (odom + IMU)
+
+**Stack:** ROS 2 Humble · Gazebo Fortress · Nav2 · OpenCV · Python 3.10
 
 ---
 
-##  Hardware Migration Guide
+## Team
 
-When you have the physical Jetson + RPLiDAR + MPU-9250:
-
-```bash
-# Install hardware drivers
-sudo apt install ros-humble-rplidar-ros ros-humble-usb-cam
-
-# RPLiDAR node (replaces Gazebo ray sensor)
-ros2 run rplidar_ros rplidarNode \
-  --ros-args -p serial_port:=/dev/ttyUSB0 -p serial_baudrate:=115200
-
-# USB Camera
-ros2 run usb_cam usb_cam_node_exe \
-  --ros-args -p video_device:=/dev/video0
-
-# Everything else (EKF, SLAM, Nav2, mission nodes) is IDENTICAL
-# Just set use_sim_time: false in all configs
-```
+**LUMI** — GMIT Mandya, Karnataka, India
+**Event:** MAHE Mobility Challenge 2026, powered by ARTPARK @ IISc Bengaluru
 
 ---
 
-##  Reference Repositories Used
-
-| Repository | What was taken |
-|---|---|
-| bhavikmk/warehousebot | 3-package workspace structure, ROS2 Humble pattern |
-| kuralme/rb1_ros2_description | Circular chassis URDF design, sensor placement |
-| AAISHAA1585/Autonomous_Indoor_Robot-ROS2 | Nav2 action client pattern for waypoint navigation |
-| RobotecAI/agentic-mobile-manipulator | Agentic task sequencing for mission controller |
-
----
-
-*WarehouseNav AMR | MAHE Mobility Challenge 2026 | Built with ROS2 Humble*
+*Built with ❤️ using ROS 2 Humble · Gazebo Fortress · OpenCV · Nav2*
