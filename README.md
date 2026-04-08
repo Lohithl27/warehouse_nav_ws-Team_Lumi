@@ -1,6 +1,6 @@
 # LUMI — Autonomous Warehouse Navigation AMR
 
-**MAHE Mobility Challenge 2026 | Round 1.5 | by Rino | GMIT Mandya**
+**MAHE Mobility Challenge 2026 | Round 1.5 |**
 
 ![LUMI Demo](lumi_demo.gif)
 
@@ -234,9 +234,9 @@ warenav_r15/
 
 ## Team
 
-**LUMI** — GMIT Mandya, Karnataka, India
+**LUMI** — India
 **Event:** MAHE Mobility Challenge 2026, powered by ARTPARK @ IISc Bengaluru
 
 ---
 
-*Built with ❤️ using ROS 2 Humble · Gazebo Fortress · OpenCV · Nav2*
+*Built with ROS 2 Humble · Gazebo Fortress · OpenCV · Nav2*
