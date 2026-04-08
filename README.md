@@ -1,6 +1,6 @@
 # LUMI — Autonomous Warehouse Navigation AMR
 
-**MAHE Mobility Challenge 2026 | Round 1.5 |**
+**MAHE Mobility Challenge 2026 | Round 1.5**
 
 ![LUMI Demo](lumi_demo.gif)
 
