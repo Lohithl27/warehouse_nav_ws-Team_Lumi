@@ -7,7 +7,7 @@
 > Map-less autonomous navigation · ArUco detection · ROS 2 Humble · Gazebo Fortress
 
 ---
-
+ Lohith 
 ## What LUMI Does
 
 LUMI is a fully autonomous mobile robot that:
